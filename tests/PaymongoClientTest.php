@@ -95,7 +95,7 @@ it('can send a request and throw a paymongo exception', function () {
     }
 })->throws(PaymongoException::class);
 
-it('can send a request and throw a client exception', function () {
+it('rethrows the Guzzle exception when a 4xx JSON body has no errors key', function () {
     $mockHandler = new MockHandler([
         new ClientException('Some error happened', new Request('GET', '/'), new Response(400, ['Content-Type' => 'application/json'], '{}')),
     ]);
@@ -163,8 +163,6 @@ it('rejects unknown client options', function () {
 
 it('url-encodes resource ids so they cannot alter the path', function () {
     $client = new class('a', 'b') extends PaymongoClient {
-        protected $base_resource_key = 'payments';
-
         public function path(...$segments)
         {
             return $this->resourcePath(...$segments);
@@ -187,7 +185,7 @@ it('sends requests to the /v1 API path', function () {
     expect((string) $history[0]['request']->getUri())->toBe('https://api.paymongo.com/v1/payments/pay_1');
 });
 
-it('throws a client exception for non-json error bodies', function () {
+it('rethrows the Guzzle exception for non-JSON error bodies', function () {
     $handlerStack = HandlerStack::create(new MockHandler([
         new Response(502, [], '<html>Bad Gateway</html>'),
     ]));
@@ -196,7 +194,67 @@ it('throws a client exception for non-json error bodies', function () {
     $client->sendRequest($client->createRequest('GET', 'payments'));
 })->throws(\GuzzleHttp\Exception\ServerException::class);
 
-it('includes the status code and previous exception on paymongo errors', function () {
+it('throws a JsonException for a malformed success body', function () {
+    $handlerStack = HandlerStack::create(new MockHandler([
+        new Response(200, [], '{not json'),
+    ]));
+    $client = new PaymongoClient('a', 'b', [], ['handler' => $handlerStack]);
+
+    $client->sendRequest($client->createRequest('GET', 'payments'));
+})->throws(\JsonException::class);
+
+it('does not expose the secret key when a PaymongoException is dumped', function () {
+    $handlerStack = HandlerStack::create(new MockHandler([
+        new Response(422, [], '{"errors":[{"detail":"bad"}]}'),
+    ]));
+    $client = new PaymongoClient('pk_test_public', 'sk_test_secret', [], ['handler' => $handlerStack]);
+
+    try {
+        $client->sendRequest($client->createRequest('GET', 'payments'));
+    } catch (PaymongoException $e) {
+        ob_start();
+        var_dump($e);
+        print_r($e);
+        $dump = ob_get_clean();
+
+        expect($dump)
+            ->not->toContain('sk_test_secret')
+            ->not->toContain(base64_encode('sk_test_secret'))
+            ->not->toContain(base64_encode('pk_test_public'));
+        expect($e->getPrevious())->toBeNull();
+        return;
+    }
+
+    throw new \Exception('Expected PaymongoException');
+});
+
+it('falls back to the error code, then a generic message, when an error has no detail', function () {
+    $e = new PaymongoException([['code' => 'parameter_invalid'], ['foo' => 'bar'], 'oops']);
+
+    expect($e->format_errors())->toBe(['parameter_invalid', 'Unknown error', 'Unknown error']);
+});
+
+it('applies default timeouts and lets guzzle options override them', function () {
+    $history = [];
+    $stack = HandlerStack::create(new MockHandler([
+        new Response(200, [], '{"data":1}'),
+        new Response(200, [], '{"data":1}'),
+    ]));
+    $stack->push(\GuzzleHttp\Middleware::history($history));
+
+    $default = new PaymongoClient('a', 'b', [], ['handler' => $stack]);
+    $default->sendRequest($default->createRequest('GET', 'payments'));
+
+    $custom = new PaymongoClient('a', 'b', [], ['handler' => $stack, 'timeout' => 5, 'connect_timeout' => 2]);
+    $custom->sendRequest($custom->createRequest('GET', 'payments'));
+
+    expect($history[0]['options']['timeout'])->toBe(30);
+    expect($history[0]['options']['connect_timeout'])->toBe(10);
+    expect($history[1]['options']['timeout'])->toBe(5);
+    expect($history[1]['options']['connect_timeout'])->toBe(2);
+});
+
+it('includes the status code and errors on paymongo errors', function () {
     $handlerStack = HandlerStack::create(new MockHandler([
         new Response(422, [], '{"errors":[{"detail":"bad"}]}'),
     ]));
@@ -206,8 +264,7 @@ it('includes the status code and previous exception on paymongo errors', functio
         $client->sendRequest($client->createRequest('GET', 'payments'));
     } catch (PaymongoException $e) {
         expect($e->getCode())->toBe(422);
-        expect($e->getPrevious())->not->toBeNull();
-        expect($e->getErrors())->toBe([['detail' => 'bad']]);
+                expect($e->getErrors())->toBe([['detail' => 'bad']]);
         return;
     }
 

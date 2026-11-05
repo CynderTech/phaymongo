@@ -22,9 +22,30 @@ class PaymongoException extends Exception {
         return $this->paymongo_errors;
     }
 
+    /**
+     * var_dump()/print_r() of an exception include its stack trace, and with
+     * zend.exception_ignore_args=Off the trace holds the arguments of
+     * PaymongoClient::sendRequest(), i.e. the Request whose Authorization header
+     * is the base64-encoded secret key. Leave the trace out of dumps.
+     */
+    public function __debugInfo()
+    {
+        return array(
+            'message' => $this->getMessage(),
+            'code' => $this->getCode(),
+            'file' => $this->getFile(),
+            'line' => $this->getLine(),
+            'paymongo_errors' => $this->paymongo_errors,
+        );
+    }
+
     public function format_errors() {
         return array_map(function ($error) {
-            return is_array($error) && isset($error['detail']) ? $error['detail'] : '';
+            if (is_array($error)) {
+                return $error['detail'] ?? $error['code'] ?? 'Unknown error';
+            }
+
+            return 'Unknown error';
         }, $this->paymongo_errors);
     }
 }

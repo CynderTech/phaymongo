@@ -28,6 +28,12 @@ $expected = [
     'https://api.paymongo.com/v1/refunds',
     'https://api.paymongo.com/v1/links/a%2Fb/archive',
 ];
+$intent = json_decode((string) $history[0]['request']->getBody(), true);
+if ($intent['data']['attributes']['amount'] !== 1999) {
+    fwrite(STDERR, "FAIL: expected amount 1999, got " . var_export($intent['data']['attributes']['amount'], true) . "\n");
+    exit(1);
+}
+
 foreach ($expected as $i => $uri) {
     $actual = (string) $history[$i]['request']->getUri();
     if ($actual !== $uri) {

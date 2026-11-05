@@ -35,3 +35,17 @@ it('can instantiate a refund resource class', function () {
 it('can instantiate a link resource class', function () {
     expect($this->client->link())->toBeInstanceOf(Link::class);
 });
+
+it('masks keys in debug output and lists only guzzle option names', function () {
+    $client = new \Paymongo\Phaymongo\Phaymongo('pk_live_public', 'sk_live_secret', ['unwrap' => false], ['proxy' => 'http://user:pass@proxy.test']);
+
+    ob_start();
+    var_dump($client);
+    print_r($client);
+    $dump = ob_get_clean();
+
+    expect($dump)
+        ->not->toContain('sk_live_secret')
+        ->not->toContain('pk_live_public')
+        ->not->toContain('user:pass');
+});

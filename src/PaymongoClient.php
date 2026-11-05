@@ -8,8 +8,11 @@ use GuzzleHttp\Psr7\Request;
 use InvalidArgumentException;
 
 if (!defined('PAYMONGO_BASE_URL')) {
-    // Kept for backward compatibility. Prefer PaymongoClient::BASE_URL.
-    define('PAYMONGO_BASE_URL', 'https://api.paymongo.com/v1/');
+    /**
+     * @deprecated Unused by the library and kept only for backward compatibility
+     *             (original value, no trailing slash). Use PaymongoClient::BASE_URL.
+     */
+    define('PAYMONGO_BASE_URL', 'https://api.paymongo.com/v1');
 }
 
 class PaymongoClient {
@@ -121,7 +124,10 @@ class PaymongoClient {
             }
 
             if (is_array($json) && isset($json['errors']) && is_array($json['errors'])) {
-                throw new PaymongoException($json['errors'], $response->getStatusCode(), $error);
+                // Deliberately NOT chaining $error: Guzzle exceptions hold the original
+                // request, whose Authorization header is the base64-encoded secret key,
+                // and print_r()/var_dump() of the exception would expose it.
+                throw new PaymongoException($json['errors'], $response->getStatusCode());
             }
 
             throw $error;
