@@ -1,12 +1,12 @@
 # Phaymongo
 An unofficial simple API client for Paymongo written in PHP
 
-[![codecov](https://codecov.io/gh/CynderTech/phaymongo/branch/main/graph/badge.svg?token=G3CXPN9NDY)](https://codecov.io/gh/CynderTech/phaymongo)
+[![codecov](https://codecov.io/gh/CynderTech/phaymongo/branch/main/graph/badge.svg)](https://codecov.io/gh/CynderTech/phaymongo)
 
 ## Installation
 `composer require cyndertech/phaymongo`
 
-Requires PHP 7.4 or newer (tested on 7.4 through 8.5). Upgrading from `micahbule/phaymongo`? See [CHANGELOG.md](CHANGELOG.md) — the package name changed but the `Paymongo\Phaymongo` namespace did not.
+Requires PHP 7.4 or newer. CI runs the full test suite on PHP 7.4 through 8.5. Upgrading from `micahbule/phaymongo`? See [CHANGELOG.md](CHANGELOG.md) — the package name changed but the `Paymongo\Phaymongo` namespace did not.
 
 ## Usage
 Simply use the `Phaymongo` class and call the resource method to create a resource class. In the examples below, we'll be creating a payment intent.
@@ -46,6 +46,10 @@ function pay() {
     }
 }
 ```
+
+## Timeouts and retries
+Requests time out after 30 seconds (10 seconds to connect). Override them with the fourth constructor argument, e.g. `new Phaymongo($pk, $sk, [], ['timeout' => 10])`. A timeout throws a Guzzle `ConnectException` / `RequestException` rather than a `PaymongoException`.
+**A timed-out `POST` (creating a payment intent, refund, link, etc.) may still have succeeded at Paymongo.** Look the resource up, or use your own reference/metadata, before retrying so a customer isn't charged or refunded twice.
 
 ## Features
 * PSR-4 and PSR-7 Compliant
