@@ -1,10 +1,12 @@
 # Phaymongo
 An unofficial simple API client for Paymongo written in PHP
 
-[![codecov](https://codecov.io/gh/micahbule/phaymongo/branch/main/graph/badge.svg?token=G3CXPN9NDY)](https://codecov.io/gh/micahbule/phaymongo)
+[![codecov](https://codecov.io/gh/CynderTech/phaymongo/branch/main/graph/badge.svg)](https://codecov.io/gh/CynderTech/phaymongo)
 
 ## Installation
-`composer require micahbule/phaymongo`
+`composer require cyndertech/phaymongo`
+
+Requires PHP 7.4 or newer. CI runs the full test suite on PHP 7.4 through 8.5. Upgrading from `micahbule/phaymongo`? See [CHANGELOG.md](CHANGELOG.md) — the package name changed but the `Paymongo\Phaymongo` namespace did not.
 
 ## Usage
 Simply use the `Phaymongo` class and call the resource method to create a resource class. In the examples below, we'll be creating a payment intent.
@@ -33,17 +35,30 @@ use Paymongo\Phaymongo\Phaymongo;
 function pay() {
     try {
         $client = new Phaymongo('YOUR_PUBLIC_KEY', 'YOUR_SECRET_KEY');
-        $paymentIntent = $client->create(100, ['gcash', 'card']);
+        $paymentIntent = $client->paymentIntent()->create(100, ['gcash', 'card']);
 
         // do something with the payment intent
-    } catch ($e) {
-        /** To get the body of a successful request but failed response, just do the following */
-        $body = $e->getResponse()->json();
+    } catch (\Paymongo\Phaymongo\PaymongoException $e) {
+        /** To get the error details of a failed request, just do the following */
+        $errors = $e->format_errors();
 
         // do something with the error
     }
 }
 ```
+
+## Timeouts and retries
+Requests time out after 30 seconds (10 seconds to connect). Override them with the fourth constructor argument, e.g. `new Phaymongo($pk, $sk, [], ['timeout' => 10])`. A timeout throws a Guzzle `ConnectException` / `RequestException` rather than a `PaymongoException`.
+**A timed-out `POST` (creating a payment intent, refund, link, etc.) may still have succeeded at Paymongo.** Look the resource up, or use your own reference/metadata, before retrying so a customer isn't charged or refunded twice.
+
+## Logging errors safely
+Request objects carry your secret key in the `Authorization` header (base64-encoded, not encrypted), and some exceptions hold on to the request:
+* `PaymongoException` and the client objects mask keys in `var_dump()` / `print_r()` output.
+* Any other exception thrown while a request is in flight still references the original request, either as a property or in its stack trace. That includes Guzzle exceptions that are **not** Paymongo API errors (connection failures and timeouts, 5xx responses with a non-JSON body, 4xx responses without an `errors` body) and a `JsonException` from a malformed response.
+
+So in production, log `$e->getMessage()` and `$e->getTraceAsString()` rather than `print_r($e, true)` or `var_dump($e)`, and set `zend.exception_ignore_args = On` in `php.ini` (the default in PHP's production template) so stack traces don't record request objects.
+
+To run the tests locally: `composer test` on PHP 8.2+, or `composer test:legacy` on PHP 7.4–8.1 (Pest 1 / PHPUnit 9).
 
 ## Features
 * PSR-4 and PSR-7 Compliant
@@ -65,7 +80,7 @@ All **fields in bold** are required fields whereas ***fields in italics*** are o
 * **public_key** - Your Paymongo Public Key
 * **secret_key** - Your Paymongo Secret Key
 * ***client_ops.unwrap*** - This is a boolean that determines whether your client will return the resource info nested in the data property of the original response payload. ***Default to true***.
-* ***client_ops.return_response*** - This is a boolean that determines if the client will return the original HTTP message object for further processing.
+* ***client_ops.return_response*** - This is a boolean that determines if the client will return the original HTTP message object for further processing. Unknown option names throw an `InvalidArgumentException`.
 #### Methods
 * [**paymentIntent()**](#payment-intent-resource) - Returns a Payment Intent resource object
 * [**paymentMethod()**](#payment-method-resource) - Returns a Payment Method resource object
@@ -80,7 +95,7 @@ Parent API client class. If for some reason you need to access resources manuall
 * **public_key** - Your Paymongo Public Key
 * **secret_key** - Your Paymongo Secret Key
 * ***client_ops.unwrap*** - This is a boolean that determines whether your client will return the resource info nested in the data property of the original response payload. ***Default to true***.
-* ***client_ops.return_response*** - This is a boolean that determines if the client will return the original HTTP message object for further processing.
+* ***client_ops.return_response*** - This is a boolean that determines if the client will return the original HTTP message object for further processing. Unknown option names throw an `InvalidArgumentException`.
 #### Methods
 ##### createRequest($method, $url, $payload, $use_public_key)
 Constructs a Request object to be sent by the HTTP client

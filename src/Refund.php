@@ -17,7 +17,7 @@ class Refund extends PaymongoClient {
      */
     public function create($amount, $payment_id, $reason, $notes = null, $metadata = null) {
         $attributes = array(
-            'amount' => $amount * 100,
+            'amount' => (int) round($amount * 100),
             'payment_id' => $payment_id,
             'reason' => $reason,
         );
