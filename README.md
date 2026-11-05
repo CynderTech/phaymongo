@@ -51,6 +51,13 @@ function pay() {
 Requests time out after 30 seconds (10 seconds to connect). Override them with the fourth constructor argument, e.g. `new Phaymongo($pk, $sk, [], ['timeout' => 10])`. A timeout throws a Guzzle `ConnectException` / `RequestException` rather than a `PaymongoException`.
 **A timed-out `POST` (creating a payment intent, refund, link, etc.) may still have succeeded at Paymongo.** Look the resource up, or use your own reference/metadata, before retrying so a customer isn't charged or refunded twice.
 
+## Logging errors safely
+Request objects carry your secret key in the `Authorization` header (base64-encoded, not encrypted), and some exceptions hold on to the request:
+* `PaymongoException` and the client objects mask keys in `var_dump()` / `print_r()` output.
+* Guzzle exceptions that are **not** Paymongo API errors (connection failures and timeouts, 5xx responses with a non-JSON body, 4xx responses without an `errors` body) are rethrown as-is and still reference the original request.
+
+So in production, log `$e->getMessage()` and `$e->getTraceAsString()` rather than `print_r($e, true)` or `var_dump($e)`, and set `zend.exception_ignore_args = On` in `php.ini` (the default in PHP's production template) so stack traces don't record request objects.
+
 ## Features
 * PSR-4 and PSR-7 Compliant
 * Easy, intuitive API design
