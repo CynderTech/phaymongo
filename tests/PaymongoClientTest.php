@@ -264,7 +264,7 @@ it('includes the status code and errors on paymongo errors', function () {
         $client->sendRequest($client->createRequest('GET', 'payments'));
     } catch (PaymongoException $e) {
         expect($e->getCode())->toBe(422);
-                expect($e->getErrors())->toBe([['detail' => 'bad']]);
+        expect($e->getErrors())->toBe([['detail' => 'bad']]);
         return;
     }
 

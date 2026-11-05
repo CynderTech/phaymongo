@@ -1,5 +1,5 @@
 <?php
-// Dependency-light smoke test for PHP 7.4-8.1 where Pest 3 can't be installed.
+// Dependency-light smoke test of the public API against a mocked transport; runs on every CI job.
 require __DIR__ . '/../vendor/autoload.php';
 
 use GuzzleHttp\Handler\MockHandler;

@@ -55,6 +55,9 @@ jobs:
     - name: Install dependencies
       run: composer update --prefer-dist --no-progress --no-interaction ${{ matrix.lowest && '--prefer-lowest --prefer-stable' || '' }}
 
+    - name: Show resolved versions
+      run: composer show guzzlehttp/guzzle guzzlehttp/psr7 phpunit/phpunit pestphp/pest mockery/mockery | grep -E '^(name|versions)'
+
     - name: Security audit
       run: composer audit
 
