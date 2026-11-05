@@ -18,7 +18,7 @@ class Payment extends PaymongoClient {
      */
     public function create($amount, $source_id, $description = null, $statement_descriptor = null, $metadata = null) {
         $attributes = array(
-            'amount' => $amount * 100,
+            'amount' => (int) round($amount * 100),
             'currency' => 'PHP', // hard-coded for now
             'source' => array(
                 'id' => $source_id,
@@ -75,7 +75,7 @@ class Payment extends PaymongoClient {
             $queries['limit'] = $limit;
         }
 
-        $request = $this->createRequest('GET', '/payments');
+        $request = $this->createRequest('GET', $this->resourcePath($this->base_resource_key));
         return $this->sendRequest($request, ['query' => $queries]);
     }
 }

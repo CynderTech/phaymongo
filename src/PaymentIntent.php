@@ -16,7 +16,7 @@ class PaymentIntent extends PaymongoClient {
      */
     public function create($amount, $payment_method_allowed, $payment_method_options = null, $description = null, $metadata = null, $currency = 'PHP') {
         $attributes = array(
-            'amount' => $amount * 100,
+            'amount' => (int) round($amount * 100),
             'payment_method_allowed' => $payment_method_allowed,
             'currency' => $currency,
         );
@@ -74,7 +74,7 @@ class PaymentIntent extends PaymongoClient {
         }
 
         $payload = PaymongoUtils::constructPayload($attributes);
-        $request = $this->createRequest('POST', '/payment_intents/' . $payment_intent_id . '/attach', $payload);
+        $request = $this->createRequest('POST', $this->resourcePath($this->base_resource_key, $payment_intent_id, 'attach'), $payload);
         return $this->sendRequest($request);
     }
 }

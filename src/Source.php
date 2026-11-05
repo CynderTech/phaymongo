@@ -19,7 +19,7 @@ class Source extends PaymongoClient {
     public function create($amount, $type, $success_url, $failed_url, $billing = null, $metadata = null, $currency = 'PHP') {
         $attributes = array(
             'type' => $type,
-            'amount' => $amount * 100,
+            'amount' => (int) round($amount * 100),
             'currency' => $currency,
             'redirect' => array(
                 'success' => $success_url,

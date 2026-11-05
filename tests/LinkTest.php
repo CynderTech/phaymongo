@@ -19,13 +19,6 @@ it('can create a link without remarks', function () {
         ),
     );
 
-    $utilsMock = \Mockery::mock('alias:Paymongo\Phaymongo\PaymongoUtils');
-    $utilsMock->shouldReceive('constructPayload')
-        ->withArgs([$dummyAttributes])
-        ->atLeast()
-        ->times(1)
-        ->andReturn($dummyPayload);
-
     $linkMock = \Mockery::mock('Paymongo\Phaymongo\Link')->makePartial();
     $linkMock->shouldReceive('createResource')
         ->withArgs([$dummyPayload])
@@ -55,13 +48,6 @@ it('can create a link with remarks', function () {
         ),
     );
 
-    $utilsMock = \Mockery::mock('alias:Paymongo\Phaymongo\PaymongoUtils');
-    $utilsMock->shouldReceive('constructPayload')
-        ->withArgs([$dummyAttributes])
-        ->atLeast()
-        ->times(1)
-        ->andReturn($dummyPayload);
-
     $linkMock = \Mockery::mock('Paymongo\Phaymongo\Link')->makePartial();
     $linkMock->shouldReceive('createResource')
         ->withArgs([$dummyPayload])
@@ -87,7 +73,7 @@ it('can retrieve a link by ID', function () {
 it('can retrieve a link by reference number', function () {
     $linkMock = \Mockery::mock('Paymongo\Phaymongo\Link')->makePartial();
     $linkMock->shouldReceive('createRequest')
-        ->withArgs(['GET', '/links'])
+        ->withArgs(['GET', 'links'])
         ->atLeast()
         ->times(1)
         ->andReturn(true);
@@ -103,7 +89,7 @@ it('can retrieve a link by reference number', function () {
 it('can archive a link', function () {
     $linkMock = \Mockery::mock('Paymongo\Phaymongo\Link')->makePartial();
     $linkMock->shouldReceive('createRequest')
-        ->withArgs(['POST', '/links/1/archive'])
+        ->withArgs(['POST', 'links/1/archive'])
         ->atLeast()
         ->times(1)
         ->andReturn(true);
@@ -119,7 +105,7 @@ it('can archive a link', function () {
 it('can unarchive a link', function () {
     $linkMock = \Mockery::mock('Paymongo\Phaymongo\Link')->makePartial();
     $linkMock->shouldReceive('createRequest')
-        ->withArgs(['POST', '/links/1/unarchive'])
+        ->withArgs(['POST', 'links/1/unarchive'])
         ->atLeast()
         ->times(1)
         ->andReturn(true);
