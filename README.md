@@ -58,7 +58,8 @@ Request objects carry your secret key in the `Authorization` header (base64-enco
 
 So in production, log `$e->getMessage()` and `$e->getTraceAsString()` rather than `print_r($e, true)` or `var_dump($e)`, and set `zend.exception_ignore_args = On` in `php.ini` (the default in PHP's production template) so stack traces don't record request objects.
 
-To run the tests locally: `composer test` on PHP 8.2+, or `composer test:legacy` on PHP 7.4–8.1 (Pest 1 / PHPUnit 9).
+## Development
+Run the tests with `composer test` on PHP 8.2+ (Pest 3), or `composer test:legacy` on PHP 7.4–8.1 (Pest 1 / PHPUnit 9).
 
 ## Features
 * PSR-4 and PSR-7 Compliant
