@@ -54,7 +54,7 @@ Requests time out after 30 seconds (10 seconds to connect). Override them with t
 ## Logging errors safely
 Request objects carry your secret key in the `Authorization` header (base64-encoded, not encrypted), and some exceptions hold on to the request:
 * `PaymongoException` and the client objects mask keys in `var_dump()` / `print_r()` output.
-* Any other exception thrown while a request is in flight still references the original request, either as a property or in its stack trace. That includes Guzzle exceptions that are **not** Paymongo API errors (connection failures and timeouts, 5xx responses with a non-JSON body, 4xx responses without an `errors` body) and a `JsonException` from a malformed response.
+* Any other exception thrown while a request is in flight still references the original request, either as a property or in its stack trace. That includes Guzzle exceptions that are **not** Paymongo API errors (connection failures and timeouts, every 5xx response, and 4xx responses without an `errors` array) and a `JsonException` from a malformed response.
 
 So in production, log `$e->getMessage()` and `$e->getTraceAsString()` rather than `print_r($e, true)` or `var_dump($e)`, and set `zend.exception_ignore_args = On` in `php.ini` (the default in PHP's production template) so stack traces don't record request objects.
 
