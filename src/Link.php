@@ -24,17 +24,17 @@ class Link extends PaymongoClient {
     }
 
     public function retrieveByReferenceNumber($refNum) {
-        $request = $this->createRequest('GET', '/' . $this->base_resource_key);
+        $request = $this->createRequest('GET', $this->resourcePath($this->base_resource_key));
         return $this->sendRequest($request, array('query' => array('reference_number' => $refNum)));
     }
 
     public function archive($id) {
-        $request = $this->createRequest('POST', '/' . $this->base_resource_key . '/' . $id . '/archive');
+        $request = $this->createRequest('POST', $this->resourcePath($this->base_resource_key, $id, 'archive'));
         return $this->sendRequest($request);
     }
 
     public function unarchive($id) {
-        $request = $this->createRequest('POST', '/' . $this->base_resource_key . '/' . $id . '/unarchive');
+        $request = $this->createRequest('POST', $this->resourcePath($this->base_resource_key, $id, 'unarchive'));
         return $this->sendRequest($request);
     }
 }

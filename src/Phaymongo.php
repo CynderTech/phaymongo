@@ -46,4 +46,17 @@ class Phaymongo {
     public function link() {
         return new Link($this->public_key, $this->secret_key, $this->client_ops, $this->guzzle_ops);
     }
+
+    /**
+     * Keep API keys out of var_dump(), print_r() and most loggers.
+     */
+    public function __debugInfo()
+    {
+        return array(
+            'public_key' => '***',
+            'secret_key' => '***',
+            'client_ops' => $this->client_ops,
+            'guzzle_ops' => array_keys((array) $this->guzzle_ops),
+        );
+    }
 }

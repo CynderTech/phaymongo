@@ -11,13 +11,6 @@ it('can create a payment method without optional fields', function () {
         ),
     );
 
-    $utilsMock = \Mockery::mock('alias:Paymongo\Phaymongo\PaymongoUtils');
-    $utilsMock->shouldReceive('constructPayload')
-        ->withArgs([$dummyAttributes])
-        ->atLeast()
-        ->times(1)
-        ->andReturn($dummyPayload);
-
     $paymentMethodMock = \Mockery::mock('Paymongo\Phaymongo\PaymentMethod')->makePartial();
     $paymentMethodMock->shouldReceive('createResource')
         ->withArgs([$dummyPayload])
@@ -43,13 +36,6 @@ it('can create a payment method with optional fields', function () {
             'attributes' => $dummyAttributes,
         ),
     );
-
-    $utilsMock = \Mockery::mock('alias:Paymongo\Phaymongo\PaymongoUtils');
-    $utilsMock->shouldReceive('constructPayload')
-        ->withArgs([$dummyAttributes])
-        ->atLeast()
-        ->times(1)
-        ->andReturn($dummyPayload);
 
     $paymentMethodMock = \Mockery::mock('Paymongo\Phaymongo\PaymentMethod')->makePartial();
     $paymentMethodMock->shouldReceive('createResource')
