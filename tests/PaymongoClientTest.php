@@ -307,22 +307,26 @@ it('keeps the /v1 prefix when a caller passes a leading-slash path', function ()
     expect((string) $history[0]['request']->getUri())->toBe('https://api.paymongo.com/v1/payments/pay_1');
 });
 
-it('throws a PaymongoException with the status code for a 5xx with an errors body', function () {
+it('keeps throwing the Guzzle ServerException for a 5xx, even with an errors body', function () {
+    // A 5xx means Paymongo's side failed and the outcome of a POST is uncertain, which is
+    // not the same as a PaymongoException ("Paymongo understood and rejected the request").
+    // Consumers classify the two differently, so 5xx must not be converted.
     $stack = HandlerStack::create(new MockHandler([
         new Response(500, [], '{"errors":[{"code":"internal_error","detail":"x"}]}'),
     ]));
     $client = new PaymongoClient('a', 'b', [], ['handler' => $stack]);
 
-    try {
-        $client->sendRequest($client->createRequest('GET', 'payments'));
-    } catch (PaymongoException $e) {
-        expect($e->getCode())->toBe(500);
-        expect($e->format_errors())->toBe(['x']);
-        return;
-    }
+    $client->sendRequest($client->createRequest('GET', 'payments'));
+})->throws(\GuzzleHttp\Exception\ServerException::class);
 
-    throw new \Exception('Expected PaymongoException');
-});
+it('rethrows the Guzzle ClientException for a 4xx with a non-JSON body', function () {
+    $stack = HandlerStack::create(new MockHandler([
+        new Response(400, [], '<html>Bad Request</html>'),
+    ]));
+    $client = new PaymongoClient('a', 'b', [], ['handler' => $stack]);
+
+    $client->sendRequest($client->createRequest('GET', 'payments'));
+})->throws(\GuzzleHttp\Exception\ClientException::class);
 
 it('rethrows the Guzzle exception when errors is not an array', function () {
     $stack = HandlerStack::create(new MockHandler([

@@ -3,7 +3,7 @@
 namespace Paymongo\Phaymongo;
 
 use GuzzleHttp\Client;
-use GuzzleHttp\Exception\RequestException;
+use GuzzleHttp\Exception\ClientException;
 use GuzzleHttp\Psr7\Request;
 use InvalidArgumentException;
 
@@ -116,7 +116,10 @@ class PaymongoClient {
             if (!$this->unwrap) return $json;
 
             return $json['data'];
-        } catch (RequestException $error) {
+        } catch (ClientException $error) {
+            // Only 4xx responses are converted. A 5xx (GuzzleHttp\Exception\ServerException)
+            // propagates unchanged: it means Paymongo's side failed and the outcome of a POST
+            // is uncertain, which callers must be able to tell apart from an API rejection.
             $response = $error->getResponse();
             $json = null;
 
