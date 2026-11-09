@@ -85,6 +85,11 @@ class PaymongoClient {
     }
 
     public function createRequest(string $method, string $url, ?array $payload = null, bool $use_public_key = false) {
+        // Paths must stay relative to BASE_URL: under RFC 3986 a leading slash would
+        // resolve against the host root and silently drop the /v1 prefix, and a
+        // leading "//" would switch host and send the Authorization header to it.
+        $url = ltrim($url, '/');
+
         $request = new Request($method, $url, array(
             'Authorization' => $this->getAuthorizationHeader($use_public_key),
             'Content-Type' => 'application/json',

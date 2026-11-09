@@ -295,3 +295,53 @@ it('sends float amounts as exact integer centavos', function () {
     $body = json_decode((string) $history[0]['request']->getBody(), true);
     expect($body['data']['attributes']['amount'])->toBe(1999);
 });
+
+it('keeps the /v1 prefix when a caller passes a leading-slash path', function () {
+    $history = [];
+    $stack = HandlerStack::create(new MockHandler([new Response(200, [], '{"data":"ok"}')]));
+    $stack->push(\GuzzleHttp\Middleware::history($history));
+
+    $client = new PaymongoClient('a', 'b', [], ['handler' => $stack]);
+    $client->sendRequest($client->createRequest('GET', '/payments/pay_1'));
+
+    expect((string) $history[0]['request']->getUri())->toBe('https://api.paymongo.com/v1/payments/pay_1');
+});
+
+it('throws a PaymongoException with the status code for a 5xx with an errors body', function () {
+    $stack = HandlerStack::create(new MockHandler([
+        new Response(500, [], '{"errors":[{"code":"internal_error","detail":"x"}]}'),
+    ]));
+    $client = new PaymongoClient('a', 'b', [], ['handler' => $stack]);
+
+    try {
+        $client->sendRequest($client->createRequest('GET', 'payments'));
+    } catch (PaymongoException $e) {
+        expect($e->getCode())->toBe(500);
+        expect($e->format_errors())->toBe(['x']);
+        return;
+    }
+
+    throw new \Exception('Expected PaymongoException');
+});
+
+it('rethrows the Guzzle exception when errors is not an array', function () {
+    $stack = HandlerStack::create(new MockHandler([
+        new Response(422, [], '{"errors":"oops"}'),
+    ]));
+    $client = new PaymongoClient('a', 'b', [], ['handler' => $stack]);
+
+    $client->sendRequest($client->createRequest('GET', 'payments'));
+})->throws(\GuzzleHttp\Exception\ClientException::class);
+
+it('does not let a protocol-relative path switch hosts', function () {
+    $history = [];
+    $stack = HandlerStack::create(new MockHandler([new Response(200, [], '{"data":"ok"}')]));
+    $stack->push(\GuzzleHttp\Middleware::history($history));
+
+    $client = new PaymongoClient('a', 'b', [], ['handler' => $stack]);
+    $client->sendRequest($client->createRequest('GET', '//evil.test/steal'));
+
+    $uri = $history[0]['request']->getUri();
+    expect($uri->getHost())->toBe('api.paymongo.com');
+    expect((string) $uri)->toBe('https://api.paymongo.com/v1/evil.test/steal');
+});

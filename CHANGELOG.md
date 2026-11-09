@@ -6,7 +6,7 @@
 - Package renamed from `micahbule/phaymongo` to `cyndertech/phaymongo` (`replace`s the old name). The `Paymongo\Phaymongo` namespace is unchanged.
 - Requires PHP `^7.4 || ^8.0`, `guzzlehttp/guzzle ^7.15.2` and `guzzlehttp/psr7 ^2.12.3`. The psr7 1.x line is no longer supported because it is affected by published security advisories and has no patched release.
 - `client_ops` now only accepts `unwrap` and `return_response`; any other key throws `InvalidArgumentException`. Previously any property (including `secret_key`) could be overwritten.
-- Requests now resolve under `https://api.paymongo.com/v1/`. The old base URI plus absolute paths silently dropped the `/v1` prefix. Verify behaviour against your Paymongo account before upgrading.
+- Requests now resolve under `https://api.paymongo.com/v1/`. The old base URI plus absolute paths silently dropped the `/v1` prefix. Paths passed to the public `createRequest()` with a leading slash (e.g. `/payments/pay_x`) are normalised so they also keep `/v1`. Verify behaviour against your Paymongo account before upgrading.
 - Amounts are converted with `(int) round($amount * 100)` instead of `$amount * 100`, so `19.99` is sent as `1999` rather than `1998.9999999999998`.
 - A 4xx **or 5xx** response with a Paymongo `errors` body now throws `PaymongoException`. Previously only 4xx did, and a 5xx threw Guzzle's `ServerException`. Code that catches `ServerException` to retry, or treats every `PaymongoException` as a user-facing decline, should be reviewed.
 - `PaymongoException::getCode()` now returns the HTTP status code instead of `0`.
